@@ -42,5 +42,33 @@ app.get("/api/expenses", async (req, res) => {
   }
 });
 
+app.patch("/api/expenses/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedExpense = await Expense.findByIdAndUpdate(id, req.body, {
+      new: true, // return the updated document
+    });
+    if (!updatedExpense) {
+      return res.status(404).json({ error: "Expense not found" });
+    }
+    res.json(updatedExpense);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete("/api/expenses/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedExpense = await Expense.findByIdAndDelete(id);
+    if (!deletedExpense) {
+      return res.status(404).json({ error: "Expense not found" });
+    }
+    res.json({ message: "Expense deleted successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
