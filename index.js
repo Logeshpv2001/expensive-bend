@@ -33,9 +33,29 @@ app.post("/api/expenses", async (req, res) => {
   }
 });
 
+// app.get("/api/expenses", async (req, res) => {
+//   try {
+//     const expenses = await Expense.find().sort({ date: -1 });
+//     res.json(expenses);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
 app.get("/api/expenses", async (req, res) => {
   try {
-    const expenses = await Expense.find().sort({ date: -1 });
+    const now = new Date();
+
+    // current year and month in YYYY-MM format
+    const currentYearMonth = `${now.getFullYear()}-${String(
+      now.getMonth() + 1
+    ).padStart(2, "0")}`;
+
+    // Find all expenses where date string starts with currentYearMonth
+    const expenses = await Expense.find({
+      date: { $regex: `^${currentYearMonth}` },
+    }).sort({ date: -1 });
+
     res.json(expenses);
   } catch (err) {
     res.status(500).json({ error: err.message });
