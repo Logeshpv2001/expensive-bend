@@ -33,34 +33,37 @@ app.post("/api/expenses", async (req, res) => {
   }
 });
 
-// app.get("/api/expenses", async (req, res) => {
-//   try {
-//     const expenses = await Expense.find().sort({ date: -1 });
-//     res.json(expenses);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
 app.get("/api/expenses", async (req, res) => {
   try {
-    const now = new Date();
-
-    // current year and month in YYYY-MM format
-    const currentYearMonth = `${now.getFullYear()}-${String(
-      now.getMonth() + 1
-    ).padStart(2, "0")}`;
-
-    // Find all expenses where date string starts with currentYearMonth
-    const expenses = await Expense.find({
-      date: { $regex: `^${currentYearMonth}` },
-    }).sort({ date: -1 });
-
+    const expenses = await Expense.find().sort({ date: -1 });
     res.json(expenses);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+// app.get("/api/expenses", async (req, res) => {
+//   try {
+//     const now = new Date();
+//     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); // e.g. 2025-08-01
+//     const endOfMonth = new Date(
+//       now.getFullYear(),
+//       now.getMonth() + 1,
+//       0,
+//       23,
+//       59,
+//       59
+//     ); // e.g. 2025-08-31 23:59:59
+
+//     const expenses = await Expense.find({
+//       date: { $gte: startOfMonth, $lte: endOfMonth },
+//     }).sort({ date: -1 });
+
+//     res.json(expenses);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 app.patch("/api/expenses/:id", async (req, res) => {
   try {
@@ -91,4 +94,7 @@ app.delete("/api/expenses/:id", async (req, res) => {
 });
 
 const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});
