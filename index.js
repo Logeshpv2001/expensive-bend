@@ -17,12 +17,12 @@ const expenseSchema = new mongoose.Schema({
   title: String,
   description: String,
   amount: Number,
-  date: String,
   date: { type: Date, default: Date.now },
 });
 
 const Expense = mongoose.model("Expense", expenseSchema);
 
+// Add expense
 app.post("/api/expenses", async (req, res) => {
   try {
     const expense = new Expense(req.body);
@@ -33,6 +33,7 @@ app.post("/api/expenses", async (req, res) => {
   }
 });
 
+// Get all expenses
 app.get("/api/expenses", async (req, res) => {
   try {
     const expenses = await Expense.find().sort({ date: -1 });
@@ -42,34 +43,85 @@ app.get("/api/expenses", async (req, res) => {
   }
 });
 
-// app.get("/api/expenses", async (req, res) => {
-//   try {
-//     const now = new Date();
-//     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); // e.g. 2025-08-01
-//     const endOfMonth = new Date(
-//       now.getFullYear(),
-//       now.getMonth() + 1,
-//       0,
-//       23,
-//       59,
-//       59
-//     ); // e.g. 2025-08-31 23:59:59
+// Get current month expenses
+app.get("/api/expenses/current-month", async (req, res) => {
+  try {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-//     const expenses = await Expense.find({
-//       date: { $gte: startOfMonth, $lte: endOfMonth },
-//     }).sort({ date: -1 });
+    const expenses = await Expense.find({
+      date: { $gte: start, $lte: end },
+    }).sort({ date: -1 });
 
-//     res.json(expenses);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
+// Filter expenses by date range
+app.get("/api/expenses/filter", async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    if (!from || !to) {
+      return res.status(400).json({ error: "Both from and to dates required" });
+    }
+
+    const start = new Date(from);
+    const end = new Date(to);
+
+    const expenses = await Expense.find({
+      date: { $gte: start, $lte: end },
+    }).sort({ date: -1 });
+
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Total spent
+app.get("/api/expenses/total", async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    let start, end;
+
+    if (from && to) {
+      start = new Date(from);
+      end = new Date(to);
+    } else {
+      const now = new Date();
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+
+    const result = await Expense.aggregate([
+      {
+        $match: {
+          date: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    res.json({ total: result.length > 0 ? result[0].total : 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update
 app.patch("/api/expenses/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const updatedExpense = await Expense.findByIdAndUpdate(id, req.body, {
-      new: true, // return the updated document
+      new: true,
     });
     if (!updatedExpense) {
       return res.status(404).json({ error: "Expense not found" });
@@ -80,6 +132,7 @@ app.patch("/api/expenses/:id", async (req, res) => {
   }
 });
 
+// Delete
 app.delete("/api/expenses/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -94,7 +147,6 @@ app.delete("/api/expenses/:id", async (req, res) => {
 });
 
 const PORT = 5000;
-
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
