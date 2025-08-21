@@ -223,7 +223,7 @@ app.post("/api/auth/login", async (req, res) => {
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
-      expiresIn: "1d",
+      expiresIn: "7d",
     });
 
     res.json({
